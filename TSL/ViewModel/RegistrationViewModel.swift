@@ -36,7 +36,6 @@ class RegistrationViewModel: ObservableObject {
             case .success(let data):
                 DispatchQueue.main.async {
                     self?.isRegistered = true
-//                    self?.getAPIKey()
                 }
                 break
             case .failure(let error):
@@ -73,6 +72,7 @@ class RegistrationViewModel: ObservableObject {
                     }
                 } catch {
                     print("ERROR in LOGIN :: \(error)")
+                    self?.showingApiFailedAlert = true
                 }
 
 

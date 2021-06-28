@@ -48,7 +48,6 @@ struct MessageView: View {
                   }
             )
         })
-//        .padding()
     }
 }
 

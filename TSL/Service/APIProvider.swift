@@ -61,11 +61,5 @@ class APIProvider<EndPoint: APIEndPoint> {
             }
         }
         .resume()
-//        return URLSession.shared.dataTaskPublisher(for: request)
-//            .mapError { error -> Error in
-//                APIErrors(rawValue: error.code.rawValue) ?? APIProviderErrors.unknownError
-//            }
-//            .map { $0.data }
-//            .eraseToAnyPublisher()
     }
 }
