@@ -17,37 +17,72 @@ class RegistrationViewModel: ObservableObject {
     @Published var userName = ""
     @Published var password = ""
     @Published var showingHomePage = false
+    @Published var showingAlert = false
+    @Published var showingApiFailedAlert = false
+    @Published var isRegistered = false
+    @Published var isLoading = false
+
     @Published private(set) var apiToken: APIToken?
     
     func registerUser() {
         print("register")
-        apiProvider.getData(from: .registration(userName: userName, password: password))
-            .receive(on: RunLoop.main)
-            .sink(receiveCompletion: { [weak self]  completion in
-                switch completion {
-                case .finished: break
-                case .failure(let error):
-                    print("Error :: \(error)")
+        isLoading = true
+        
+        apiProvider.getData(from: .registration(userName: userName, password: password)) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.isLoading = false
+            }
+            switch result {
+            case .success(let data):
+                DispatchQueue.main.async {
+                    self?.isRegistered = true
+//                    self?.getAPIKey()
                 }
-            }, receiveValue: { [weak self] data in
-                self?.getAPIKey()
-            })
-            .store(in: &cancellable)
+                break
+            case .failure(let error):
+                DispatchQueue.main.async {
+                    self?.showingApiFailedAlert = true
+                }
+                print(error.localizedDescription)
+                break
+            }
+        }
     }
-
+    
     func getAPIKey() {
+        
+        if userName.isEmpty || password.isEmpty {
+            showingAlert = true
+            return
+        }
         print("apiKey")
-        apiProvider.getData(from: .apiToken)
-            .decode(type: APIToken.self, decoder: JSONDecoder())
-            .receive(on: RunLoop.main)
-            .sink(receiveCompletion: { [weak self] _ in
+        isLoading = true
+        apiProvider.getData(from:  .login(userName: userName, password: password)) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.isLoading = false
+            }
+            switch result {
+            case .success(let data):
+                let decoder = JSONDecoder()
+                do {
+                    let response = try decoder.decode(APIToken.self, from: data)
+                    DispatchQueue.main.async {
+                        self?.apiToken = response
+                        Self.apiKey = response.token
+                        self?.showingHomePage = true
+                    }
+                } catch {
+                    print("ERROR in LOGIN :: \(error)")
+                }
+
+
                 
-            }, receiveValue: { [weak self] token in
-                print(token.token)
-                self?.apiToken = token
-                Self.apiKey = token.token
-                self?.showingHomePage = true
-            })
-            .store(in: &cancellable)
+            case .failure(let error):
+                DispatchQueue.main.async {
+                    self?.showingApiFailedAlert = true
+                }
+                print(error.localizedDescription)
+            }
+        }
     }
 }

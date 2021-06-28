@@ -9,6 +9,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var isLoading = false
     var body: some View {
         TabView {
             MessageView()

@@ -15,7 +15,7 @@ enum MessageEndPoint {
 
 extension MessageEndPoint: APIEndPoint {
     var baseURL: String {
-        "http://127.0.0.1:5000/api"
+        "https://tslwallapp.herokuapp.com/api"
     }
 
     var absoluteURL: String {
@@ -37,17 +37,27 @@ extension MessageEndPoint: APIEndPoint {
     }
 
     var headers: [String : String] {
-        [
-            "X-Api-Key": RegistrationViewModel.apiKey,
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        ]
+        
+        switch self {
+        case .getMessage:
+            return [
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            ]
+        case .saveMessage(_):
+            let hello = ""
+            let loginString = String(format: "%@:%@", RegistrationViewModel.apiKey, hello)
+            let loginData = loginString.data(using: String.Encoding.utf8)!
+            let base64LoginString = loginData.base64EncodedString()
+            return ["Authorization": "Basic \(base64LoginString)", "Content-Type": "application/json", "Accept": "application/json"]
+        }
+
     }
 
     var httpMethod: HTTPMethod {
         switch self {
-        case .getMessage: return .post
-        case .saveMessage(_): return .get
+        case .getMessage: return .get
+        case .saveMessage(_): return .post
         }
     }
 }

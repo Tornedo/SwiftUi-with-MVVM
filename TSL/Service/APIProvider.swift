@@ -10,14 +10,13 @@ import Foundation
 import Combine
 
 class APIProvider<EndPoint: APIEndPoint> {
-    func getData(from endPoint: EndPoint) -> AnyPublisher<Data, Error> {
+    func getData(from endPoint: EndPoint, completion: @escaping (Result<Data, Error>) -> Void) {
         guard let request = performRequest(for: endPoint) else {
-            return Fail(error: APIProviderErrors.invalidURL)
-                .eraseToAnyPublisher()
+            completion(.failure(APIProviderErrors.invalidURL))
+            return
         }
-
-        return loadData(with: request)
-                .eraseToAnyPublisher()
+        
+        loadData(with: request, completion: completion)
     }
     
     private func performRequest(for endPoint: EndPoint) -> URLRequest? {
@@ -40,16 +39,33 @@ class APIProvider<EndPoint: APIEndPoint> {
             urlRequest.httpBody = jsonData
         }
         
+        print(endPoint.params)
+        print("BODY :: \(urlRequest.httpBody)")
         endPoint.headers.forEach { urlRequest.setValue($0.value, forHTTPHeaderField: $0.key)}
+        
+        print(endPoint.headers)
         return urlRequest
     }
     
-    private func loadData(with request: URLRequest) -> AnyPublisher<Data, Error> {
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .mapError { error -> Error in
-                APIErrors(rawValue: error.code.rawValue) ?? APIProviderErrors.unknownError
+    private func loadData(with request: URLRequest, completion: @escaping (Result<Data, Error>) -> Void){
+        print(request.url)
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
             }
-            .map { $0.data }
-            .eraseToAnyPublisher()
+            
+            if let data = data {
+                completion(.success(data))
+            } else {
+                completion(.failure(APIProviderErrors.unknownError))
+            }
+        }
+        .resume()
+//        return URLSession.shared.dataTaskPublisher(for: request)
+//            .mapError { error -> Error in
+//                APIErrors(rawValue: error.code.rawValue) ?? APIProviderErrors.unknownError
+//            }
+//            .map { $0.data }
+//            .eraseToAnyPublisher()
     }
 }

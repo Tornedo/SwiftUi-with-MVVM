@@ -11,16 +11,20 @@ import Foundation
 enum LoginEndPoint {
     case registration(userName: String, password: String)
     case login(userName: String, password: String)
-    case apiToken
 }
 
 extension LoginEndPoint: APIEndPoint {
     var baseURL: String {
-        "http://127.0.0.1:5000/api"
+        "https://tslwallapp.herokuapp.com/api"
     }
 
     var absoluteURL: String {
-        baseURL + "/users"
+        switch self {
+        case .registration(_, _):
+            return baseURL + "/users"
+        case .login(_, _):
+           return baseURL + "/token"
+        }
     }
 
     var params: [String : String] {
@@ -28,20 +32,29 @@ extension LoginEndPoint: APIEndPoint {
         case .registration(let userName, let password):
             return ["username": userName, "password": password]
         case .login(let userName, let password):
-            return ["username": userName, "password": password]
-        case .apiToken:
             return [:]
         }
     }
 
     var headers: [String : String] {
-        [
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        ]
+        switch self {
+        case .registration(let _, let _):
+            return ["Content-Type": "application/json", "Accept": "application/json"]
+        case .login(let userName, let password):
+            let loginString = String(format: "%@:%@", userName, password)
+            let loginData = loginString.data(using: String.Encoding.utf8)!
+            let base64LoginString = loginData.base64EncodedString()
+            return ["Authorization": "Basic \(base64LoginString)"]
+        }
+
     }
 
     var httpMethod: HTTPMethod {
-        .post
+        switch self {
+        case .registration(_, _):
+            return .post
+        default:
+            return .get
+        }
     }
 }

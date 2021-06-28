@@ -25,21 +25,56 @@ struct RegisterView: View {
                         
                         Section {
                             Button(action: {
-                                viewModel.registerUser()
+                                if viewModel.isRegistered {
+                                    viewModel.getAPIKey()
+                                } else {
+                                    viewModel.registerUser()
+                                }
                             }) {
                                 HStack {
                                     Spacer()
-                                    Text("Registration")
+                                    Text(viewModel.isRegistered ? "Login" : "Registration")
                                     Spacer()
                                 }
                             }
                             
+                            if !viewModel.isRegistered {
+                                Button(action: {
+                                    viewModel.isRegistered = true
+                                }, label: {
+                                    HStack {
+                                        Spacer()
+                                        Text("Already have an accunt? Login")
+                                        Spacer()
+                                    }
+                                })
+                            }
                         }
+                        
+                        if viewModel.isLoading{
+                            LoadingView()
+                        }
+                        
                     }
+                    
                     .navigationTitle(Text("Registration"))
                 }
+                
             }
         }
+        .alert(isPresented: $viewModel.showingAlert, content: {
+            Alert(title: Text("Error"),
+                  message: Text("UserName and Password is required"),
+                  dismissButton: .default(Text("OK")))
+        })
+        .alert(isPresented: $viewModel.showingApiFailedAlert, content: {
+            Alert(title: Text("Oops!"),
+                  message: Text("Something went wrong."),
+                  dismissButton: .default(Text("OK")){
+                    viewModel.showingApiFailedAlert = false
+                  }
+            )
+        })
     }
 }
 
